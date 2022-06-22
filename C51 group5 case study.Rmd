@@ -1,0 +1,266 @@
+---
+title: "C51 group5 case study"
+author: "Zidi Gao","Tongfei Li ","Mengjiao Liu","HaoyangYu"
+date: "2022/4/9"
+output: html_document
+---
+
+---
+title: "Zidi C51 case study"
+author: "Zidi Gao"
+date: "2022/4/2"
+output: html_document
+---
+
+```{r}
+library(tidyverse)
+library(readxl)
+library(dplyr)
+brown_fat <- read_excel("D:/STAC51/casestudy/BrownFat.xls")
+##change variable type##
+brown_fat$Sex <- factor(brown_fat$Sex)
+brown_fat$Diabetes <- factor(brown_fat$Diabetes)
+brown_fat$Season <- factor(brown_fat$Season)
+brown_fat$Cancer_Status <- factor(brown_fat$Cancer_Status)
+brown_fat$Cancer_Type <- factor(brown_fat$Cancer_Type)
+brown_fat$TSH <- as.numeric(brown_fat$TSH)
+brown_fat$BrownFat <- factor(brown_fat$BrownFat)
+##check and remove variables##
+TSH_percent <- sum(is.na(brown_fat$TSH))/4842
+TSH_percent
+brown_fat1 <- mutate(.data = brown_fat, Id = NULL, TSH = NULL, Total_vol = NULL)
+```
+
+```{r}
+brown_fat %>%
+  ggplot(aes(y = BrownFat)) + 
+  geom_point(aes(x = Total_vol))
+
+```
+
+```{r}
+library(dplyr)
+```
+
+
+
+```{r}
+brown_fat %>%
+  dplyr::select(c(Month,Season)) -> bf1
+```
+
+
+```{r}
+TSH = sum(is.na(brown_fat$TSH))/4842
+brown_fat %>%
+  dplyr::select(-c(Id,Total_vol,TSH)) -> bf
+
+```
+
+
+```{r}
+brown_fat %>%
+  ggplot(aes(x = BrownFat, y = Age)) +
+  geom_boxplot()
+
+```
+
+
+
+```{r}
+brown_fat %>%
+  ggplot(aes(x = BrownFat, y = `Ext_Temp`)) +
+  geom_boxplot()
+```
+
+
+
+```{r}
+brown_fat %>%
+  ggplot(aes(x = BrownFat, y = `2D_Temp`)) +
+  geom_bin2d()
+```
+
+
+```{r}
+brown_fat %>%
+  ggplot(aes(x = BrownFat, y = `2D_Temp`)) +
+  geom_bin_2d()
+```
+
+
+```{r}
+brown_fat %>%
+  ggplot(aes(x = BrownFat, y = `3D_Temp`)) +
+  geom_boxplot()
+```
+
+```{r}
+brown_fat %>%
+  ggplot(aes(x = BrownFat, y = `7D_Temp`)) +
+  geom_boxplot()
+```
+
+
+```{r}
+brown_fat %>%
+  ggplot(aes(x = BrownFat, y = `1M_Temp`)) +
+  geom_boxplot()
+```
+
+
+```{r}
+brown_fat %>%
+  ggplot(aes(x = BrownFat, y = `Glycemy`)) +
+  geom_boxplot()
+```
+
+```{r}
+brown_fat %>%
+  ggplot(aes(x = BrownFat, y = `BMI`)) +
+  geom_boxplot()
+```
+
+```{r}
+brown_fat %>%
+  ggplot(aes(x = BrownFat, y = `BMI`)) +
+  geom_boxplot()
+```
+
+
+```{r}
+##only main effect model##
+mod_main <- glm(formula = BrownFat~., family = binomial,data = brown_fat1)
+```
+
+
+```{r}
+summary(mod_main)
+```
+
+```{r}
+##reduce with step
+mod_main_r <- step(mod_main, direction = "both")
+```
+
+```{r}
+drop1(mod_main_r, test = "Chisq")
+```
+
+```{r}
+mod_main_rr <- glm(formula = BrownFat ~ Sex + Diabetes + Age + Ext_Temp + `2D_Temp` + `3D_Temp` + Weigth + LBW, family = binomial,data = brown_fat1)
+```
+
+```{r}
+summary(mod_main_rr)
+```
+
+
+
+```{r}
+brown_fat2 <- select(.data = brown_fat1, c(Sex,Diabetes,Age,Ext_Temp,`2D_Temp`,`3D_Temp`,Weigth,LBW,BrownFat))
+```
+
+
+```{r}
+mod_inter <- glm(formula =BrownFat~.^2, family = binomial,data=brown_fat2)
+```
+
+```{r}
+summary(mod_inter)
+```
+
+```{r}
+mod_inter_r = step(mod_inter,direction = "both")
+```
+
+```{r}
+summary(mod_inter_r)
+```
+
+
+
+```{r}
+drop1(mod_inter_r, test = "Chisq")
+```
+
+Optional: drop the interaction between Age and Weight for p-value=0.096496
+```{r}
+mod_inter_rr <- glm(formula =BrownFat ~ Sex + Diabetes + Age + Ext_Temp + `2D_Temp` + `3D_Temp` +  Weigth + LBW + Sex:Diabetes + Sex:Age + Diabetes:Weigth + Diabetes:LBW + Ext_Temp:`2D_Temp` + `3D_Temp`:Weigth + Weigth:LBW + Ext_Temp:Weigth, family = binomial,data=brown_fat2)
+```
+
+```{r}
+summary(mod_inter_rr)
+```
+```{r}
+mean(brown_fat2$Ext_Temp)
+cent1 <- brown_fat2$Ext_Temp-mean(brown_fat2$Ext_Temp)
+cent2 <- brown_fat2$`2D_Temp`-mean(brown_fat2$`2D_Temp`)
+cent3 <- brown_fat2$`3D_Temp`-mean(brown_fat2$`3D_Temp`)
+cor(cent1,cent2)
+```
+
+```{r}
+mod_inter_rrr <- glm(formula =BrownFat ~ Sex + Diabetes + Age + cent1 + `cent2` + cent3  +  Weigth + LBW + Sex:Diabetes + Sex:Age + Diabetes:Weigth + Diabetes:LBW + Ext_Temp:`2D_Temp` + `3D_Temp`:Weigth + Weigth:LBW + Ext_Temp:Weigth, family = binomial,data=brown_fat2)
+summary(mod_inter_rrr)
+```
+
+```{r}
+anova(mod_inter_rr, mod_main_rr, test="Chisq")
+```
+
+Goodness-of-fit Test
+Hosmer-Lemeshow test
+
+
+```{r}
+library(ResourceSelection)
+hoslem.test(mod_inter_rr$y,fitted(mod_inter_rr),g=18)
+```
+
+```{r}
+cor(brown_fat2$Ext_Temp,brown_fat2$`2D_Temp`)
+par(mfrow=c(2,2))
+plot(brown_fat2$Ext_Temp,brown_fat2$`2D_Temp`)
+
+cor(brown_fat2$Ext_Temp,brown_fat2$`3D_Temp`)
+plot(brown_fat2$Ext_Temp,brown_fat2$`3D_Temp`)
+
+cor(brown_fat2$`2D_Temp`,brown_fat2$`3D_Temp`)
+plot(brown_fat2$`2D_Temp`,brown_fat2$`3D_Temp`)
+```
+
+```{r}
+#interaction model
+n<- 4842
+prop = sum(brown_fat$BrownFat == 1)/n
+y<- (brown_fat$BrownFat ==1)*1
+predicted<- as.numeric(fitted(mod_inter_rr)>prop)
+tab=xtabs(~y+predicted)
+tab
+sensitivity = tab[2,2]/(tab[2,1]+tab[2,2])
+speciticity = tab[1,1]/(tab[1,1]+tab[1,2])
+concordance = (tab[1,1]+tab[2,2])/(tab[1,1]+tab[2,1]+tab[1,2]+tab[2,2])
+sensitivity 
+speciticity
+concordance
+
+```
+Predictive Power
+
+
+
+
+ROC Curve
+```{r}
+library(pROC)
+test_roc = roc(brown_fat$BrownFat~fitted(mod_inter_rr),col= "red", plot=TRUE, print.auc = TRUE)
+plot(roc(brown_fat$BrownFat~fitted(mod_main_rr)),col="blue",add = T)
+legend("topleft",legend = c("main effct model","interaction model"), col = c("blue","red"),lty = 1,cex = 1.2)
+test_roc = roc(brown_fat$BrownFat~fitted(mod_main_rr), plot=TRUE, print.auc = TRUE)
+
+```
+
+
+
+
